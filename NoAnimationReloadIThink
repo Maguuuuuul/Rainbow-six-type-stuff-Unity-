@@ -4,21 +4,29 @@ using UnityEngine;
 public class WeaponReload : MonoBehaviour
 {
     // Public variables to adjust the reload animation
-    public Vector3 reloadPositionOffset = new Vector3(0, -0.5f, 0);
-    public Vector3 reloadRotationOffset = new Vector3(20f, 0, 0); // Rotation offsets in degrees
+    public Transform weaponModel; // Reference to the weapon's main model
+    public Transform armsModel;   // Reference to the arms or attachment model
+    public Vector3 weaponReloadPositionOffset = new Vector3(0, -0.5f, 0);
+    public Vector3 weaponReloadRotationOffset = new Vector3(20f, 0, 0); // Rotation offsets in degrees
+    public Vector3 armsReloadPositionOffset = new Vector3(0, 0.2f, 0);
+    public Vector3 armsReloadRotationOffset = new Vector3(-10f, 0, 0); // Rotation offsets in degrees
     public float reloadDuration = 0.5f;
     public AudioClip reloadSound;
 
-    private Vector3 originalPosition;
-    private Quaternion originalRotation;
+    private Vector3 weaponOriginalPosition;
+    private Quaternion weaponOriginalRotation;
+    private Vector3 armsOriginalPosition;
+    private Quaternion armsOriginalRotation;
     private bool isReloading = false;
     private AudioSource audioSource;
 
     void Start()
     {
-        // Save the original position and rotation of the weapon
-        originalPosition = transform.localPosition;
-        originalRotation = transform.localRotation;
+        // Save original positions and rotations
+        weaponOriginalPosition = weaponModel.localPosition;
+        weaponOriginalRotation = weaponModel.localRotation;
+        armsOriginalPosition = armsModel.localPosition;
+        armsOriginalRotation = armsModel.localRotation;
 
         // Get AudioSource component for playing reload sound
         audioSource = GetComponent<AudioSource>();
@@ -54,30 +62,38 @@ public class WeaponReload : MonoBehaviour
         while (elapsedTime < duration / 2)
         {
             float normalizedTime = elapsedTime / (duration / 2);
-            transform.localPosition = Vector3.Lerp(originalPosition, originalPosition + reloadPositionOffset, normalizedTime);
-            transform.localRotation = Quaternion.Lerp(originalRotation, Quaternion.Euler(originalRotation.eulerAngles + reloadRotationOffset), normalizedTime);
+            weaponModel.localPosition = Vector3.Lerp(weaponOriginalPosition, weaponOriginalPosition + weaponReloadPositionOffset, normalizedTime);
+            weaponModel.localRotation = Quaternion.Lerp(weaponOriginalRotation, Quaternion.Euler(weaponOriginalRotation.eulerAngles + weaponReloadRotationOffset), normalizedTime);
+            armsModel.localPosition = Vector3.Lerp(armsOriginalPosition, armsOriginalPosition + armsReloadPositionOffset, normalizedTime);
+            armsModel.localRotation = Quaternion.Lerp(armsOriginalRotation, Quaternion.Euler(armsOriginalRotation.eulerAngles + armsReloadRotationOffset), normalizedTime);
             elapsedTime += Time.deltaTime;
             yield return null;
         }
 
-        // Ensure the weapon is exactly at the reload position and rotation
-        transform.localPosition = originalPosition + reloadPositionOffset;
-        transform.localRotation = Quaternion.Euler(originalRotation.eulerAngles + reloadRotationOffset);
+        // Ensure the weapon and arms are exactly at the reload position and rotation
+        weaponModel.localPosition = weaponOriginalPosition + weaponReloadPositionOffset;
+        weaponModel.localRotation = Quaternion.Euler(weaponOriginalRotation.eulerAngles + weaponReloadRotationOffset);
+        armsModel.localPosition = armsOriginalPosition + armsReloadPositionOffset;
+        armsModel.localRotation = Quaternion.Euler(armsOriginalRotation.eulerAngles + armsReloadRotationOffset);
         elapsedTime = 0;
 
-        // Smoothly move and rotate the weapon back up
+        // Smoothly move and rotate the weapon and arms back up
         while (elapsedTime < duration / 2)
         {
             float normalizedTime = elapsedTime / (duration / 2);
-            transform.localPosition = Vector3.Lerp(originalPosition + reloadPositionOffset, originalPosition, normalizedTime);
-            transform.localRotation = Quaternion.Lerp(Quaternion.Euler(originalRotation.eulerAngles + reloadRotationOffset), originalRotation, normalizedTime);
+            weaponModel.localPosition = Vector3.Lerp(weaponOriginalPosition + weaponReloadPositionOffset, weaponOriginalPosition, normalizedTime);
+            weaponModel.localRotation = Quaternion.Lerp(Quaternion.Euler(weaponOriginalRotation.eulerAngles + weaponReloadRotationOffset), weaponOriginalRotation, normalizedTime);
+            armsModel.localPosition = Vector3.Lerp(armsOriginalPosition + armsReloadPositionOffset, armsOriginalPosition, normalizedTime);
+            armsModel.localRotation = Quaternion.Lerp(Quaternion.Euler(armsOriginalRotation.eulerAngles + armsReloadRotationOffset), armsOriginalRotation, normalizedTime);
             elapsedTime += Time.deltaTime;
             yield return null;
         }
 
-        // Ensure the weapon is exactly back at the original position and rotation
-        transform.localPosition = originalPosition;
-        transform.localRotation = originalRotation;
+        // Ensure the weapon and arms are exactly back at the original position and rotation
+        weaponModel.localPosition = weaponOriginalPosition;
+        weaponModel.localRotation = weaponOriginalRotation;
+        armsModel.localPosition = armsOriginalPosition;
+        armsModel.localRotation = armsOriginalRotation;
 
         isReloading = false;
     }
