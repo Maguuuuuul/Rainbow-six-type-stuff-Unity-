@@ -1,0 +1,93 @@
+using UnityEngine;
+using System.Collections;
+
+public class GrenadeThrower : MonoBehaviour
+{
+    public GameObject grenadePrefab; // Grenade prefab
+    public Transform throwPoint; // Point from where the grenade is thrown
+    public Transform handTransform; // Hand or object representing the hand
+    public float throwForce = 40f; // Force applied to the grenade when thrown
+
+    public float throwDuration = 1f; // Duration of the throw animation
+    public Vector3 idlePosition; // Idle position of the hand
+    public Vector3 throwPosition; // Position of the hand when throwing
+    public Vector3 idleRotation; // Idle rotation of the hand
+    public Vector3 throwRotation; // Rotation of the hand when throwing
+
+    private bool isThrowing = false;
+
+    private void Start()
+    {
+        SetHandToIdle();
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.G) && !isThrowing)
+        {
+            StartCoroutine(ThrowGrenade());
+        }
+    }
+
+    IEnumerator ThrowGrenade()
+    {
+        isThrowing = true;
+        float elapsedTime = 0f;
+
+        // Initial position and rotation
+        Vector3 initialPosition = handTransform.localPosition;
+        Quaternion initialRotation = handTransform.localRotation;
+
+        // Final position and rotation
+        Vector3 finalPosition = throwPosition;
+        Quaternion finalRotation = Quaternion.Euler(throwRotation);
+
+        // Animate the hand to the throw position and rotation
+        while (elapsedTime < throwDuration)
+        {
+            handTransform.localPosition = Vector3.Lerp(initialPosition, finalPosition, elapsedTime / throwDuration);
+            handTransform.localRotation = Quaternion.Lerp(initialRotation, finalRotation, elapsedTime / throwDuration);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        // Ensure final position and rotation are set
+        handTransform.localPosition = finalPosition;
+        handTransform.localRotation = finalRotation;
+
+        // Instantiate and throw the grenade
+        GameObject grenade = Instantiate(grenadePrefab, throwPoint.position, throwPoint.rotation);
+        Rigidbody rb = grenade.GetComponent<Rigidbody>();
+        rb.AddForce(throwPoint.forward * throwForce, ForceMode.VelocityChange);
+
+        // Wait a bit before returning the hand to idle
+        yield return new WaitForSeconds(0.5f);
+
+        // Animate the hand back to idle position and rotation
+        elapsedTime = 0f;
+        initialPosition = handTransform.localPosition;
+        initialRotation = handTransform.localRotation;
+        finalPosition = idlePosition;
+        finalRotation = Quaternion.Euler(idleRotation);
+
+        while (elapsedTime < throwDuration)
+        {
+            handTransform.localPosition = Vector3.Lerp(initialPosition, finalPosition, elapsedTime / throwDuration);
+            handTransform.localRotation = Quaternion.Lerp(initialRotation, finalRotation, elapsedTime / throwDuration);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        // Ensure final idle position and rotation are set
+        handTransform.localPosition = finalPosition;
+        handTransform.localRotation = finalRotation;
+
+        isThrowing = false;
+    }
+
+    void SetHandToIdle()
+    {
+        handTransform.localPosition = idlePosition;
+        handTransform.localRotation = Quaternion.Euler(idleRotation);
+    }
+}
