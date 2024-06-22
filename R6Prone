@@ -1,0 +1,102 @@
+using UnityEngine;
+
+public class PlayerProne : MonoBehaviour
+{
+    public float proneMoveSpeed = 2.5f;
+    public float proneColliderHeight = 0.5f;
+    public float proneIdleToMoveThreshold = 0.1f; // Threshold to switch from idle to move animation
+    public KeyCode proneKey = KeyCode.LeftControl; // Key to toggle prone
+
+    private Animator animator;
+    private CharacterController characterController;
+    private CapsuleCollider capsuleCollider;
+    private bool isProne = false;
+    private bool isMoving = false;
+    private Vector3 moveDirection;
+
+    void Start()
+    {
+        animator = GetComponent<Animator>();
+        characterController = GetComponent<CharacterController>();
+        capsuleCollider = GetComponent<CapsuleCollider>();
+    }
+
+    void Update()
+    {
+        HandleProneInput();
+
+        // Adjust animator parameters
+        animator.SetBool("Prone", isProne);
+        animator.SetBool("Moving", isMoving);
+
+        // Adjust collider height and center
+        AdjustCollider();
+
+        // Handle prone movement
+        HandleProneMovement();
+    }
+
+    void HandleProneInput()
+    {
+        if (Input.GetKeyDown(proneKey))
+        {
+            isProne = !isProne;
+            if (!isProne)
+            {
+                // Reset move direction when exiting prone
+                isMoving = false;
+                moveDirection = Vector3.zero;
+            }
+        }
+    }
+
+    void AdjustCollider()
+    {
+        if (isProne)
+        {
+            capsuleCollider.height = proneColliderHeight;
+            capsuleCollider.center = new Vector3(0, proneColliderHeight / 2f, 0);
+        }
+        else
+        {
+            // Reset to normal height
+            capsuleCollider.height = 2f; // Adjust this based on your character's normal height
+            capsuleCollider.center = new Vector3(0, 1f, 0); // Adjust center offset accordingly
+        }
+    }
+
+    void HandleProneMovement()
+    {
+        if (isProne)
+        {
+            float horizontalInput = Input.GetAxis("Horizontal");
+            float verticalInput = Input.GetAxis("Vertical");
+
+            // Calculate move direction relative to camera
+            Vector3 cameraForward = Camera.main.transform.forward;
+            cameraForward.y = 0f;
+            cameraForward.Normalize();
+            Vector3 cameraRight = Camera.main.transform.right;
+            cameraRight.y = 0f;
+            cameraRight.Normalize();
+
+            moveDirection = cameraForward * verticalInput + cameraRight * horizontalInput;
+
+            if (moveDirection.magnitude > proneIdleToMoveThreshold)
+            {
+                isMoving = true;
+                // Normalize move direction and apply speed
+                moveDirection.Normalize();
+                moveDirection *= proneMoveSpeed;
+            }
+            else
+            {
+                isMoving = false;
+                moveDirection = Vector3.zero;
+            }
+
+            // Apply movement
+            characterController.Move(moveDirection * Time.deltaTime);
+        }
+    }
+}
