@@ -1,0 +1,38 @@
+using UnityEngine;
+
+public class LeanMechanics : MonoBehaviour
+{
+    // Public variables for customization in the Unity editor
+    public float leanSpeed = 5.0f;
+    public float leanAmount = 15.0f;
+
+    private Quaternion originalRotation;
+    private float currentLean = 0.0f;
+
+    void Start()
+    {
+        // Store the original rotation of the player or camera
+        originalRotation = transform.localRotation;
+    }
+
+    void Update()
+    {
+        // Calculate the target lean amount based on input
+        float targetLean = 0.0f;
+        if (Input.GetKey(KeyCode.Q))
+        {
+            targetLean = leanAmount;
+        }
+        else if (Input.GetKey(KeyCode.E))
+        {
+            targetLean = -leanAmount;
+        }
+
+        // Smoothly interpolate the current lean amount towards the target lean amount
+        currentLean = Mathf.Lerp(currentLean, targetLean, Time.deltaTime * leanSpeed);
+
+        // Apply the lean rotation
+        Quaternion leanRotation = Quaternion.Euler(0, 0, currentLean);
+        transform.localRotation = originalRotation * leanRotation;
+    }
+}
