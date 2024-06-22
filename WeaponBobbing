@@ -7,17 +7,20 @@ public class GunBobbing : MonoBehaviour
     public float bobbingSpeed = 0.18f; // Speed of bobbing
     public float smoothness = 0.1f; // Smoothness of bobbing
 
-    private float defaultPosY;
-    private float defaultPosX;
-    private float timer = 0.0f;
-    private Vector3 startPos;
+    [Header("Sprinting Settings")]
+    public Vector3 sprintPosition = new Vector3(0, -0.1f, 0.3f); // Position of the gun when sprinting
+    public Vector3 sprintRotation = new Vector3(10, 0, 0); // Rotation of the gun when sprinting
+    public float sprintTransitionSpeed = 10f; // Speed of transition to sprint position
+
+    private Vector3 originalPosition;
+    private Quaternion originalRotation;
     private bool isAiming = false;
+    private bool isSprinting = false;
 
     void Start()
     {
-        startPos = transform.localPosition;
-        defaultPosY = transform.localPosition.y;
-        defaultPosX = transform.localPosition.x;
+        originalPosition = transform.localPosition;
+        originalRotation = transform.localRotation;
     }
 
     void Update()
@@ -31,14 +34,28 @@ public class GunBobbing : MonoBehaviour
             isAiming = false;
         }
 
-        if (!isAiming)
+        if (Input.GetKey(KeyCode.LeftShift) && (Input.GetAxis("Vertical") > 0)) // Left shift + moving forward
+        {
+            isSprinting = true;
+        }
+        else
+        {
+            isSprinting = false;
+        }
+
+        if (isSprinting)
+        {
+            HandleSprinting();
+        }
+        else if (!isAiming)
         {
             HandleBobbing();
         }
         else
         {
-            // Reset position when aiming
-            transform.localPosition = Vector3.Lerp(transform.localPosition, startPos, Time.deltaTime * 10);
+            // Reset position and rotation when aiming
+            transform.localPosition = Vector3.Lerp(transform.localPosition, originalPosition, Time.deltaTime * 10);
+            transform.localRotation = Quaternion.Lerp(transform.localRotation, originalRotation, Time.deltaTime * 10);
         }
     }
 
@@ -69,13 +86,19 @@ public class GunBobbing : MonoBehaviour
             translateChange = totalAxes * translateChange;
 
             Vector3 localPos = transform.localPosition;
-            localPos.y = defaultPosY + translateChange;
-            localPos.x = defaultPosX + translateChange * 0.5f; // Adjust horizontal bobbing here
+            localPos.y = originalPosition.y + translateChange;
+            localPos.x = originalPosition.x + translateChange * 0.5f; // Adjust horizontal bobbing here
             transform.localPosition = Vector3.Lerp(transform.localPosition, localPos, smoothness);
         }
         else
         {
-            transform.localPosition = Vector3.Lerp(transform.localPosition, startPos, smoothness);
+            transform.localPosition = Vector3.Lerp(transform.localPosition, originalPosition, smoothness);
         }
+    }
+
+    void HandleSprinting()
+    {
+        transform.localPosition = Vector3.Lerp(transform.localPosition, sprintPosition, Time.deltaTime * sprintTransitionSpeed);
+        transform.localRotation = Quaternion.Lerp(transform.localRotation, Quaternion.Euler(sprintRotation), Time.deltaTime * sprintTransitionSpeed);
     }
 }
