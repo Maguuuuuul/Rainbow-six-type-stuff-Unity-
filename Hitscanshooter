@@ -8,11 +8,31 @@ public class HitscanShooter : MonoBehaviour
 
     public Camera fpsCam; // Reference to the first-person camera
 
+    public int magazineSize = 30; // Magazine size
+    public float reloadSpeed = 2f; // Time it takes to reload in seconds
+
+    private int currentAmmo; // Current ammo count
+    private bool isReloading = false; // Flag to check if reloading
+
     private float nextTimeToFire = 0f; // Cooldown time between shots
+
+    private void Start()
+    {
+        currentAmmo = magazineSize;
+    }
 
     void Update()
     {
-        if (Input.GetButton("Fire1") && Time.time >= nextTimeToFire)
+        if (isReloading)
+            return;
+
+        if (Input.GetKeyDown(KeyCode.R) && currentAmmo < magazineSize)
+        {
+            StartCoroutine(Reload());
+            return;
+        }
+
+        if (Input.GetButton("Fire1") && Time.time >= nextTimeToFire && !isReloading)
         {
             nextTimeToFire = Time.time + 1f / fireRate;
             Shoot();
@@ -21,15 +41,34 @@ public class HitscanShooter : MonoBehaviour
 
     void Shoot()
     {
-        RaycastHit hit;
-        if (Physics.Raycast(fpsCam.transform.position, fpsCam.transform.forward, out hit, range))
+        if (currentAmmo > 0)
         {
-            // Check if the object hit has a barricade component
-            Barricade barricade = hit.transform.GetComponent<Barricade>();
-            if (barricade != null)
+            currentAmmo--;
+            RaycastHit hit;
+            if (Physics.Raycast(fpsCam.transform.position, fpsCam.transform.forward, out hit, range))
             {
-                barricade.TakeDamage(damage);
+                // Check if the object hit has a barricade component
+                Barricade barricade = hit.transform.GetComponent<Barricade>();
+                if (barricade != null)
+                {
+                    barricade.TakeDamage(damage);
+                }
             }
         }
+        else
+        {
+            StartCoroutine(Reload());
+        }
+    }
+
+    IEnumerator Reload()
+    {
+        isReloading = true;
+        Debug.Log("Reloading...");
+
+        yield return new WaitForSeconds(reloadSpeed);
+
+        currentAmmo = magazineSize;
+        isReloading = false;
     }
 }
