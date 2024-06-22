@@ -1,0 +1,49 @@
+using UnityEngine;
+
+public class WeaponSway : MonoBehaviour
+{
+    // Public variables for customization in the Unity editor
+    public float swayAmountX = 1.0f;
+    public float swayAmountY = 1.0f;
+    public float smoothnessX = 2.0f;
+    public float smoothnessY = 2.0f;
+    public float maxSwayAngleX = 10.0f;
+    public float maxSwayAngleY = 10.0f;
+    public float movementThreshold = 0.1f; // Threshold to detect movement
+
+    private Vector3 initialPosition;
+    private Quaternion initialRotation;
+
+    void Start()
+    {
+        // Store the initial position and rotation of the weapon
+        initialPosition = transform.localPosition;
+        initialRotation = transform.localRotation;
+    }
+
+    void Update()
+    {
+        // Check for player movement
+        bool isMoving = Mathf.Abs(Input.GetAxis("Horizontal")) > movementThreshold || Mathf.Abs(Input.GetAxis("Vertical")) > movementThreshold;
+
+        if (!isMoving)
+        {
+            // Calculate the sway amount based on time
+            float swayX = Mathf.Sin(Time.time * swayAmountX) * maxSwayAngleX;
+            float swayY = Mathf.Sin(Time.time * swayAmountY) * maxSwayAngleY;
+
+            // Create the target rotation based on the sway amounts
+            Quaternion targetRotationX = Quaternion.AngleAxis(swayX, Vector3.up);
+            Quaternion targetRotationY = Quaternion.AngleAxis(swayY, Vector3.right);
+            Quaternion targetRotation = initialRotation * targetRotationX * targetRotationY;
+
+            // Smoothly interpolate the weapon's rotation towards the target rotation
+            transform.localRotation = Quaternion.Slerp(transform.localRotation, targetRotation, Time.deltaTime * Mathf.Max(smoothnessX, smoothnessY));
+        }
+        else
+        {
+            // Reset to the initial rotation when moving
+            transform.localRotation = Quaternion.Slerp(transform.localRotation, initialRotation, Time.deltaTime * Mathf.Max(smoothnessX, smoothnessY));
+        }
+    }
+}
