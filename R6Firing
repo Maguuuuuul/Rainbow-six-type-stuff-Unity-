@@ -1,0 +1,131 @@
+using UnityEngine;
+using System.Collections;
+
+public class HitscanWeapon : MonoBehaviour
+{
+    public enum FireMode { FullAuto, SemiAuto, BurstAuto }
+    public FireMode fireMode = FireMode.FullAuto;
+
+    public Camera playerCamera; // Camera used to aim
+    public float weaponRange = 100f; // Range of the weapon
+    public float damage = 25f; // Damage per hit
+    public LayerMask hitLayers; // Layers that can be hit
+    public float fireRate = 0.1f; // Time between shots in seconds
+    public int burstCount = 3; // Number of shots per burst in burst fire mode
+    public float burstRate = 0.1f; // Time between shots in a burst
+
+    public ParticleSystem muzzleFlash; // Particle system for muzzle flash
+    public GameObject impactEffect; // Effect when hitting something
+    public AudioSource weaponSound; // Sound when firing
+
+    public LineRenderer bulletTrail; // Line renderer for the bullet trail
+    public float trailDuration = 0.05f; // Duration the trail is visible
+
+    private float nextTimeToFire = 0f; // Time until the weapon can fire again
+    private bool isBursting = false; // To check if the weapon is currently in burst fire mode
+
+    private void Update()
+    {
+        switch (fireMode)
+        {
+            case FireMode.FullAuto:
+                if (Input.GetButton("Fire1") && Time.time >= nextTimeToFire)
+                {
+                    nextTimeToFire = Time.time + fireRate;
+                    Shoot();
+                }
+                break;
+
+            case FireMode.SemiAuto:
+                if (Input.GetButtonDown("Fire1") && Time.time >= nextTimeToFire)
+                {
+                    nextTimeToFire = Time.time + fireRate;
+                    Shoot();
+                }
+                break;
+
+            case FireMode.BurstAuto:
+                if (Input.GetButtonDown("Fire1") && !isBursting)
+                {
+                    StartCoroutine(BurstFire());
+                }
+                break;
+        }
+    }
+
+    void Shoot()
+    {
+        // Play muzzle flash
+        if (muzzleFlash != null)
+        {
+            muzzleFlash.Play();
+        }
+
+        // Play weapon sound
+        if (weaponSound != null)
+        {
+            weaponSound.Play();
+        }
+
+        RaycastHit hit;
+        Vector3 shootDirection = playerCamera.transform.forward;
+        Vector3 startPoint = playerCamera.transform.position;
+
+        if (Physics.Raycast(startPoint, shootDirection, out hit, weaponRange, hitLayers))
+        {
+            Debug.Log(hit.transform.name);
+
+            // Apply damage
+            Target target = hit.transform.GetComponent<Target>();
+            if (target != null)
+            {
+                target.TakeDamage(damage);
+            }
+
+            // Instantiate impact effect
+            if (impactEffect != null)
+            {
+                GameObject impactGO = Instantiate(impactEffect, hit.point, Quaternion.LookRotation(hit.normal));
+                Destroy(impactGO, 2f);
+            }
+
+            // Draw bullet trail
+            if (bulletTrail != null)
+            {
+                StartCoroutine(ShowBulletTrail(startPoint, hit.point));
+            }
+        }
+        else
+        {
+            // Draw bullet trail to max range
+            if (bulletTrail != null)
+            {
+                StartCoroutine(ShowBulletTrail(startPoint, startPoint + shootDirection * weaponRange));
+            }
+        }
+    }
+
+    IEnumerator BurstFire()
+    {
+        isBursting = true;
+        for (int i = 0; i < burstCount; i++)
+        {
+            if (Time.time >= nextTimeToFire)
+            {
+                Shoot();
+                nextTimeToFire = Time.time + burstRate;
+            }
+            yield return new WaitForSeconds(burstRate);
+        }
+        isBursting = false;
+    }
+
+    IEnumerator ShowBulletTrail(Vector3 start, Vector3 end)
+    {
+        bulletTrail.SetPosition(0, start);
+        bulletTrail.SetPosition(1, end);
+        bulletTrail.enabled = true;
+        yield return new WaitForSeconds(trailDuration);
+        bulletTrail.enabled = false;
+    }
+}
