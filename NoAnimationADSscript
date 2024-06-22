@@ -1,0 +1,35 @@
+using UnityEngine;
+
+public class AimDownSights : MonoBehaviour
+{
+    [Header("ADS Settings")]
+    public Transform idlePosition; // Reference to the idle position object
+    public Transform adsPosition; // Reference to the ADS position object
+    public float adsSpeed = 5.0f; // Speed of transitioning to ADS
+    public float smoothness = 10.0f; // Smoothness of transitioning
+
+    private bool isAiming = false;
+
+    void Update()
+    {
+        if (Input.GetMouseButtonDown(1)) // Right click to aim
+        {
+            isAiming = true;
+        }
+        else if (Input.GetMouseButtonUp(1)) // Release right click to stop aiming
+        {
+            isAiming = false;
+        }
+
+        HandleAiming();
+    }
+
+    void HandleAiming()
+    {
+        Transform targetTransform = isAiming ? adsPosition : idlePosition;
+
+        // Smoothly transition position and rotation
+        transform.position = Vector3.Lerp(transform.position, targetTransform.position, Time.deltaTime * adsSpeed);
+        transform.rotation = Quaternion.Lerp(transform.rotation, targetTransform.rotation, Time.deltaTime * smoothness);
+    }
+}
