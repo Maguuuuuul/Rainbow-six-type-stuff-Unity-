@@ -1,0 +1,36 @@
+using UnityEngine;
+
+public class CameraMovement : MonoBehaviour
+{
+    public float horizontalSensitivity = 2f;
+    public float verticalSensitivity = 2f;
+    public float aimDownSensitivity = 1f; // Sensitivity when aiming down sights
+
+    private float yaw = 0f;
+    private float pitch = 0f;
+
+    void Update()
+    {
+        // Camera rotation based on mouse input
+        float mouseX = Input.GetAxis("Mouse X") * horizontalSensitivity;
+        float mouseY = Input.GetAxis("Mouse Y") * verticalSensitivity;
+
+        yaw += mouseX;
+        pitch -= mouseY;
+        pitch = Mathf.Clamp(pitch, -90f, 90f);
+
+        transform.eulerAngles = new Vector3(pitch, yaw, 0f);
+
+        // Adjust sensitivity when aiming down sights (for example, right mouse button)
+        if (Input.GetMouseButton(1)) // Assuming right mouse button is for aiming down sights
+        {
+            horizontalSensitivity = aimDownSensitivity;
+            verticalSensitivity = aimDownSensitivity;
+        }
+        else
+        {
+            horizontalSensitivity = 2f; // Reset to default sensitivity
+            verticalSensitivity = 2f;
+        }
+    }
+}
