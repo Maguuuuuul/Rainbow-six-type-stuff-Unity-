@@ -1,0 +1,64 @@
+using UnityEngine;
+
+public class PlayerMovement : MonoBehaviour
+{
+    public float moveSpeed = 6f;
+    public float sprintMultiplier = 1.5f;
+    public float crouchMultiplier = 0.5f; // Multiplier for crouching movement speed
+    public float jumpForce = 8f;
+
+    private CharacterController controller;
+    private bool isGrounded;
+
+    void Start()
+    {
+        controller = GetComponent<CharacterController>();
+    }
+
+    void Update()
+    {
+        // Check if the player is grounded
+        isGrounded = controller.isGrounded;
+
+        // Player movement based on input
+        float moveHorizontal = Input.GetAxis("Horizontal");
+        float moveVertical = Input.GetAxis("Vertical");
+
+        Vector3 movement = transform.right * moveHorizontal + transform.forward * moveVertical;
+
+        // Normalize movement vector to prevent faster diagonal movement
+        if (movement.magnitude > 1f)
+        {
+            movement.Normalize();
+        }
+
+        float currentSpeed = moveSpeed;
+
+        // Sprinting (Left Shift)
+        if (Input.GetKey(KeyCode.LeftShift))
+        {
+            currentSpeed *= sprintMultiplier;
+        }
+
+        // Crouching (Left Control)
+        if (Input.GetKey(KeyCode.LeftControl))
+        {
+            currentSpeed *= crouchMultiplier;
+        }
+
+        // Apply gravity
+        if (!isGrounded)
+        {
+            movement.y -= 9.81f * Time.deltaTime;
+        }
+
+        // Jumping (Space)
+        if (isGrounded && Input.GetButtonDown("Jump"))
+        {
+            movement.y = jumpForce;
+        }
+
+        // Move the player
+        controller.Move(movement * currentSpeed * Time.deltaTime);
+    }
+}
