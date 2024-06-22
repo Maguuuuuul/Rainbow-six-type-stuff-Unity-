@@ -1,0 +1,35 @@
+using UnityEngine;
+
+public class HitscanShooter : MonoBehaviour
+{
+    public float damage = 25f; // Damage per shot
+    public float fireRate = 10f; // Shots per second
+    public float range = 100f; // Max range of the hitscan
+
+    public Camera fpsCam; // Reference to the first-person camera
+
+    private float nextTimeToFire = 0f; // Cooldown time between shots
+
+    void Update()
+    {
+        if (Input.GetButton("Fire1") && Time.time >= nextTimeToFire)
+        {
+            nextTimeToFire = Time.time + 1f / fireRate;
+            Shoot();
+        }
+    }
+
+    void Shoot()
+    {
+        RaycastHit hit;
+        if (Physics.Raycast(fpsCam.transform.position, fpsCam.transform.forward, out hit, range))
+        {
+            // Check if the object hit has a barricade component
+            Barricade barricade = hit.transform.GetComponent<Barricade>();
+            if (barricade != null)
+            {
+                barricade.TakeDamage(damage);
+            }
+        }
+    }
+}
