@@ -1,0 +1,57 @@
+using UnityEngine;
+
+public class Grenade : MonoBehaviour
+{
+    public float throwForce = 40f; // Force applied to the grenade when thrown
+    public GameObject explosionEffect; // Explosion effect prefab
+    public float explosionRadius = 5f; // Radius of the explosion
+    public float explosionForce = 700f; // Force of the explosion
+    public float damage = 50f; // Damage dealt by the explosion
+
+    private float cookTime; // Remaining cook time after being thrown
+
+    private void Start()
+    {
+        // Start the explosion countdown based on remaining cook time
+        Invoke(nameof(Explode), cookTime);
+    }
+
+    public void SetCookTime(float time)
+    {
+        cookTime = time;
+    }
+
+    void Explode()
+    {
+        // Instantiate explosion effect
+        if (explosionEffect != null)
+        {
+            Instantiate(explosionEffect, transform.position, transform.rotation);
+        }
+
+        // Find all nearby objects
+        Collider[] colliders = Physics.OverlapSphere(transform.position, explosionRadius);
+
+        foreach (Collider nearbyObject in colliders)
+        {
+            // Apply explosion force
+            Rigidbody rb = nearbyObject.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.AddExplosionForce(explosionForce, transform.position, explosionRadius);
+            }
+
+            // Apply damage
+            Target target = nearbyObject.GetComponent<Target>();
+            if (target != null)
+            {
+                float distance = Vector3.Distance(transform.position, target.transform.position);
+                float damageMultiplier = Mathf.Clamp01(1 - (distance / explosionRadius));
+                target.TakeDamage(damage * damageMultiplier);
+            }
+        }
+
+        // Destroy grenade after explosion
+        Destroy(gameObject);
+    }
+}
