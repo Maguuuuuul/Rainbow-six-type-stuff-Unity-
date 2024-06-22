@@ -1,0 +1,60 @@
+using UnityEngine;
+
+public class SmoothCrouch : MonoBehaviour
+{
+    public Transform playerCamera; // Reference to the player's camera
+    public float[] crouchHeights; // Array of crouch heights
+    public float crouchSmoothTime = 0.2f; // Smoothing time for crouching
+    public KeyCode crouchKey = KeyCode.LeftControl; // Key to trigger crouching
+
+    private int currentCrouchLevel = 0; // Index of current crouch level
+    private bool isCrouching = false;
+    private float heightSmoothVelocity;
+
+    void Start()
+    {
+        // Ensure array is sorted from tallest to shortest
+        System.Array.Sort(crouchHeights);
+        currentCrouchLevel = crouchHeights.Length - 1; // Start at standing height
+    }
+
+    void Update()
+    {
+        HandleCrouching();
+        UpdateCameraPosition();
+    }
+
+    void HandleCrouching()
+    {
+        // Toggle crouch
+        if (Input.GetKeyDown(crouchKey))
+        {
+            isCrouching = !isCrouching;
+
+            if (isCrouching)
+            {
+                // Move to next lower crouch level
+                currentCrouchLevel = Mathf.Clamp(currentCrouchLevel - 1, 0, crouchHeights.Length - 1);
+            }
+            else
+            {
+                // Move to standing height
+                currentCrouchLevel = crouchHeights.Length - 1;
+            }
+        }
+
+        // Smoothly adjust height
+        float targetHeight = crouchHeights[currentCrouchLevel];
+        float smoothTime = crouchSmoothTime;
+        float currentHeight = Mathf.SmoothDamp(playerCamera.localPosition.y, targetHeight, ref heightSmoothVelocity, smoothTime);
+        playerCamera.localPosition = new Vector3(playerCamera.localPosition.x, currentHeight, playerCamera.localPosition.z);
+    }
+
+    void UpdateCameraPosition()
+    {
+        // Adjust camera position based on player height
+        Vector3 cameraPos = playerCamera.localPosition;
+        cameraPos.y = playerCamera.localPosition.y;
+        playerCamera.localPosition = cameraPos;
+    }
+}
