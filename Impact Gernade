@@ -1,0 +1,62 @@
+using UnityEngine;
+
+public class Grenade : MonoBehaviour
+{
+    public GameObject explosionEffect; // Explosion effect prefab
+    public float explosionRadius = 5f; // Radius of the explosion
+    public float explosionForce = 700f; // Force of the explosion
+    public float damage = 50f; // Damage dealt by the explosion
+    public AudioClip explosionSound; // Explosion sound clip
+
+    private AudioSource audioSource;
+
+    private void Start()
+    {
+        audioSource = GetComponent<AudioSource>();
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        Explode();
+    }
+
+    void Explode()
+    {
+        // Instantiate explosion effect
+        if (explosionEffect != null)
+        {
+            Instantiate(explosionEffect, transform.position, transform.rotation);
+        }
+
+        // Play explosion sound
+        if (explosionSound != null)
+        {
+            audioSource.PlayOneShot(explosionSound);
+        }
+
+        // Find all nearby objects
+        Collider[] colliders = Physics.OverlapSphere(transform.position, explosionRadius);
+
+        foreach (Collider nearbyObject in colliders)
+        {
+            // Apply explosion force
+            Rigidbody rb = nearbyObject.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.AddExplosionForce(explosionForce, transform.position, explosionRadius);
+            }
+
+            // Apply damage
+            Target target = nearbyObject.GetComponent<Target>();
+            if (target != null)
+            {
+                float distance = Vector3.Distance(transform.position, target.transform.position);
+                float damageMultiplier = Mathf.Clamp01(1 - (distance / explosionRadius));
+                target.TakeDamage(damage * damageMultiplier);
+            }
+        }
+
+        // Destroy grenade after explosion
+        Destroy(gameObject, 1f); // Destroy after a delay to allow sound to play
+    }
+}
